@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
-from decouple import config
+#from decouple import config
 import os
 load_dotenv() 
 
@@ -78,20 +78,20 @@ WSGI_APPLICATION = 'Newpro.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 DATABASES = {
-    'default':dj_database_url.parse(config('DATABASE_URL'))
+     'default': {
+         'ENGINE': 'django.db.backends.sqlite3',
+         'NAME': BASE_DIR / 'db.sqlite3',
+     }
+ }
+#DATABASES = {
+    #'default':dj_database_url.parse(config('DATABASE_URL'))
         
         
         
         
     
-}
+#}
 
 
 # Password validation
@@ -138,7 +138,8 @@ AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
 AUTH0_CLIENT_ID = os.getenv("AUTH0_CLIENT_ID")
 AUTH0_CLIENT_SECRET = os.getenv("AUTH0_CLIENT_SECRET")
 AUTH0_CALLBACK_URL = os.getenv("AUTH0_CALLBACK_URL")
+AUTH0_REDIRECT_URI= os.getenv("AUTH0_REDIRECT_URI")
 LOGIN_URL = '/login'
 LOGOUT_REDIRECT_URL = '/'
 
-AUTH_USER_MODEL = 'Ecom.User'
+AUTH_USER_MODEL = 'Ecom.CustomUser'

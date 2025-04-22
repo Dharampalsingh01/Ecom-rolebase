@@ -1,8 +1,10 @@
 from django.shortcuts import render
-
+import json
 # Create your views here.
 from django.shortcuts import render, redirect
 from django.conf import settings
+from urllib.parse import urlencode
+from jose import jwt
 import requests
 from django.contrib.auth import login, authenticate
 from django.contrib.auth import get_user_model
@@ -22,74 +24,79 @@ def product(request):
 
 
 def callback_view(request):
-    code = request.GET.get('code')
-    auth0_url = f"https://{settings.AUTH0_DOMAIN}/oauth/token"
-    headers = {'Content-Type': 'application/json'}
-    data = {
-        'grant_type': 'authorization_code',
-        'client_id': settings.AUTH0_CLIENT_ID,
-        'client_secret': settings.AUTH0_CLIENT_SECRET,
-        'code': code,
-        'redirect_uri': settings.AUTH0_CALLBACK_URL,
-    }
+     code = request.GET.get('code')
+     token_url = f"https://{settings.AUTH0_DOMAIN}/oauth/token"
 
-    response = requests.post(auth0_url, json=data, headers=headers)
-    response_data = response.json()
+     token_data = {
+         'grant_type': 'authorization_code',
+         'client_id': settings.AUTH0_CLIENT_ID,
+         'client_secret': settings.AUTH0_CLIENT_SECRET,
+         'code': code,
+         'redirect_uri': settings.AUTH0_CALLBACK_URL,
+     }
 
-    # Get user info
-    userinfo_url = f"https://{settings.AUTH0_DOMAIN}/userinfo"
-    userinfo_response = requests.get(userinfo_url, headers={
-        'Authorization': f"Bearer {response_data['access_token']}"
-    })
-    userinfo = userinfo_response.json()
+     token_response = requests.post(token_url, json=token_data).json()
+     id_token = token_response.get('id_token')
+     user_info = jwt.decode(
+        id_token,
+        key='',  
+        options={"verify_signature": False},
+        audience=settings.AUTH0_CLIENT_ID,
+        algorithms=["RS256"]
+    )
+     
 
+     
+     role = user_info.get("https://example.com/role") or request.session.pop("preferred_role", "customer")
+
+     
+     request.session['user'] = user_info
+     request.session['user_role'] = role
     
-    user, created = User.objects.get_or_create(username=userinfo['email'])
-    if created:
-       
-        user.role = 'customer'
-        user.save()
-
+     return redirect('/')
     
-    request.session['role'] = user.role
-    request.session['user'] = userinfo
-
-    return redirect('/')
-
 
 def register_view(request):
-    if request.method == 'POST':
-        email = request.POST['email']
-        password = request.POST['password']
-        role = request.POST['role']
-        
-        user = User.objects.create_user(username=email, password=password)
-        user.role = role
-        user.save()
+      if request.method == "POST":
+         email = request.POST.get("email")
+         password = request.POST.get("password")
+         role = request.POST.get("role", "customer")
 
-        return redirect('/login')
+         # Store data in session
+         request.session["email"] = email
+         request.session["password"] = password
+         request.session["preferred_role"] = role
+
+         
+         return redirect(f"https://{settings.AUTH0_DOMAIN}/authorize?" + urlencode({
+             'response_type': 'code',
+             'client_id': settings.AUTH0_CLIENT_ID,
+             'redirect_uri': settings.AUTH0_CALLBACK_URL,
+             'scope': 'openid profile email',
+             'screen_hint': 'signup'  
+         }))
     
-    return render(request, 'register.html')
+      return render(request, "register.html")
+    
+     
+        
 
 # Login view
 def login_view(request):
     
-    if request.method == 'POST':
-        email = request.POST['email']
-        password = request.POST['password']
-
-        user = authenticate(request,username=email, password=password)
-        if user is not None:
-            login(request, user)
-            
-            if user.role == 'seller':
-                return redirect('add_product')
-            else:
-                return redirect('dashboard')
-        else:
-            return render(request, 'login.html', {'error': 'Invalid credentials'})
-    return render(request, 'login.html')
+     return redirect(f"https://{settings.AUTH0_DOMAIN}/authorize?" + urlencode({
+         'response_type': 'code',
+         'client_id': settings.AUTH0_CLIENT_ID,
+         'redirect_uri': settings.AUTH0_CALLBACK_URL,
+         'scope': 'openid profile email',
+     }))
+    
+    
 # Logout view
 def logout_view(request):
-    request.session.flush()  
-    return redirect('/')
+     request.session.flush()
+     return redirect(f"https://{settings.AUTH0_DOMAIN}/v2/logout?" + urlencode({
+        'client_id': settings.AUTH0_CLIENT_ID,
+        'returnTo': settings.AUTH0_REDIRECT_URI,
+    }))
+    
