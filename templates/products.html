@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Product List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: contain;
+        }
+
+        .title {
+            font-weight: bold;
+            margin-top: 10px;
+            color: #555;
+            min-height: 50px;
+        }
+
+        .price {
+            color: green;
+            margin-top: 5px;
+            font-size: 1.1em;
+        }
+
+        .btn {
+            margin-top: auto;
+            margin-top: 15px;
+            padding: 10px 15px;
+            background-color: #ff6f61;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #ff3d2f;
+        }
+    </style>
+</head>
+<body>
+    <h1>Product List</h1>
+    <div class="products">
+        {% for product in products %}
+            <div class="card">
+                <img src="{{ product.image }}" alt="{{ product.title }}">
+                <div class="title">{{ product.title|truncatechars:50 }}</div>
+                <div class="price">₹{{ product.price }}</div>
+                <button class="btn">Add to Cart</button>
+            </div>
+        {% empty %}
+            <p>No products found.</p>
+        {% endfor %}
+    </div>
+</body>
+</html>
+{% endblock %}
